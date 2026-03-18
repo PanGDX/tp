@@ -1,10 +1,17 @@
 package seedu.duke;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -12,20 +19,64 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Parser class.
  */
 public class ParserTest {
+    private static final String TEST_LEDGER_FILE = "data/parser-test-ledger.txt";
+    private static final String TEST_RATES_FILE = "data/exchange-rates.json";
+
     private TransactionsList list;
+    private CurrencyConverter converter;
+    private ExchangeRateStorage exchangeRateStorage;
+    private LiveExchangeRateService liveExchangeRateService;
+
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
     @BeforeEach
-    public void setUp() {
-        list = new TransactionsList();
+    public void setUp() throws Exception {
+        deleteFile(TEST_LEDGER_FILE);
+
+        File ratesFile = new File(TEST_RATES_FILE);
+        File parent = ratesFile.getParentFile();
+        if (parent != null && !parent.exists()) {
+            parent.mkdirs();
+        }
+
+        try (FileWriter writer = new FileWriter(TEST_RATES_FILE)) {
+            writer.write("{\"base\":\"EUR\",\"date\":\"2026-03-19\",\"rates\":{\"SGD\":1.46,\"USD\":1.09}}");
+        }
+
+        list = new TransactionsList(new Storage(TEST_LEDGER_FILE));
+
+        Map<String, Double> rates = new HashMap<>();
+        rates.put("SGD", 1.46);
+        rates.put("USD", 1.09);
+        ExchangeRateData rateData = new ExchangeRateData("EUR", "2026-03-19", rates);
+
+        converter = new CurrencyConverter(rateData);
+        exchangeRateStorage = new ExchangeRateStorage(TEST_RATES_FILE);
+        liveExchangeRateService = new LiveExchangeRateService();
+
+        list.setCurrencyConverter(converter);
+
+        outputStreamCaptor.reset();
         System.setOut(new PrintStream(outputStreamCaptor));
+    }
+
+    @AfterEach
+    public void tearDown() {
+        deleteFile(TEST_LEDGER_FILE);
     }
 
     private void runParserWithInput(String input) {
         ByteArrayInputStream in = new ByteArrayInputStream(input.getBytes());
         System.setIn(in);
-        Parser parser = new Parser(list);
+        Parser parser = new Parser(list, converter, exchangeRateStorage, liveExchangeRateService);
         parser.start();
+    }
+
+    private void deleteFile(String path) {
+        File file = new File(path);
+        if (file.exists()) {
+            file.delete();
+        }
     }
 
     @Test
@@ -36,6 +87,7 @@ public class ParserTest {
         String output = outputStreamCaptor.toString();
         assertTrue(output.contains("Transaction added successfully."));
 
+        outputStreamCaptor.reset();
         list.listTransactions();
         assertTrue(outputStreamCaptor.toString().contains("Lunch"));
     }
@@ -51,6 +103,8 @@ public class ParserTest {
     @Test
     public void testListCommand() {
         list.addTransaction(new Transaction("10/10/2023", "Coffee", 5.0, "debit", "USD"));
+
+        outputStreamCaptor.reset();
         String input = "list transaction\nexit";
         runParserWithInput(input);
 
@@ -63,6 +117,7 @@ public class ParserTest {
         list.addTransaction(t);
         int id = t.getId();
 
+        outputStreamCaptor.reset();
         String input = "delete transaction " + id + "\nexit";
         runParserWithInput(input);
 
@@ -75,6 +130,7 @@ public class ParserTest {
         list.addTransaction(t);
         int id = t.getId();
 
+        outputStreamCaptor.reset();
         String input = "edit transaction " + id + " -desc Tea -a 6.0\nlist\nexit";
         runParserWithInput(input);
 
@@ -87,11 +143,33 @@ public class ParserTest {
     @Test
     public void testClearCommand() {
         list.addTransaction(new Transaction("10/10/2023", "Coffee", 5.0, "debit", "USD"));
+
+        outputStreamCaptor.reset();
         String input = "clear transaction\nlist\nexit";
         runParserWithInput(input);
 
         String output = outputStreamCaptor.toString();
         assertTrue(output.contains("All transactions have been cleared."));
         assertTrue(output.contains("No transactions found."));
+    }
+
+    @Test
+    public void testConvertCommand() {
+        String input = "convert -a 100 -from USD -to SGD\nexit";
+        runParserWithInput(input);
+
+        String output = outputStreamCaptor.toString();
+        assertTrue(output.contains("100.00 USD ="));
+        assertTrue(output.contains("SGD"));
+    }
+
+    @Test
+    public void testHelpCommand() {
+        String input = "help\nexit";
+        runParserWithInput(input);
+
+        String output = outputStreamCaptor.toString();
+        assertTrue(output.contains("=== Ledger67 Help ==="));
+        assertTrue(output.contains("convert transaction"));
     }
 }

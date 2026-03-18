@@ -1,29 +1,61 @@
 package seedu.duke;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.PrintStream;
-import org.junit.jupiter.api.Assertions;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Tests adding, listing, editing, deleting, and clearing functions of the
  * TransactionsList class.
  */
 public class TransactionsListTest {
+    private static final String TEST_FILE_PATH = "data/transactions-list-test.txt";
+
     private TransactionsList list;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
 
     @BeforeEach
     public void setUp() {
-        list = new TransactionsList();
+        deleteFile(TEST_FILE_PATH);
+
+        list = new TransactionsList(new Storage(TEST_FILE_PATH));
+
+        Map<String, Double> rates = new HashMap<>();
+        rates.put("SGD", 1.46);
+        rates.put("USD", 1.09);
+        ExchangeRateData rateData = new ExchangeRateData("EUR", "2026-03-19", rates);
+        CurrencyConverter converter = new CurrencyConverter(rateData);
+        list.setCurrencyConverter(converter);
+
+        outputStreamCaptor.reset();
         System.setOut(new PrintStream(outputStreamCaptor));
+    }
+
+    @AfterEach
+    public void tearDown() {
+        deleteFile(TEST_FILE_PATH);
+    }
+
+    private void deleteFile(String path) {
+        File file = new File(path);
+        if (file.exists()) {
+            file.delete();
+        }
     }
 
     @Test
     public void testAddAndListTransactions() {
         Transaction t = new Transaction("15/03/2023", "Salary", 5000.0, "debit", "USD");
         list.addTransaction(t);
+
+        outputStreamCaptor.reset();
         list.listTransactions();
 
         String output = outputStreamCaptor.toString().trim();
@@ -39,8 +71,9 @@ public class TransactionsListTest {
 
         Assertions.assertDoesNotThrow(() -> list.deleteTransaction(id));
 
+        outputStreamCaptor.reset();
         list.listTransactions();
-        Assertions.assertTrue(outputStreamCaptor.toString().trim().contains("No transactions found."));
+        Assertions.assertTrue(outputStreamCaptor.toString().contains("No transactions found."));
     }
 
     @Test
@@ -58,9 +91,11 @@ public class TransactionsListTest {
         int id = t.getId();
 
         list.editTransaction(id, null, null, 1200.0, null, null);
+
+        outputStreamCaptor.reset();
         list.listTransactions();
 
-        Assertions.assertTrue(outputStreamCaptor.toString().trim().contains("1200.00"));
+        Assertions.assertTrue(outputStreamCaptor.toString().contains("1200.00"));
     }
 
     @Test
@@ -68,6 +103,7 @@ public class TransactionsListTest {
         list.addTransaction(new Transaction("15/03/2023", "A", 10.0, "debit", "USD"));
         list.addTransaction(new Transaction("16/03/2023", "B", 20.0, "debit", "USD"));
 
+        outputStreamCaptor.reset();
         list.clearTransactions();
         list.listTransactions();
 

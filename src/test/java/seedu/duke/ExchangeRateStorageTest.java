@@ -1,10 +1,10 @@
 package seedu.duke;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -12,28 +12,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Tests loading exchange rates from a JSON file.
  */
 public class ExchangeRateStorageTest {
+    private static final String TEST_FILE_PATH = "data/test-rates.json";
+
+    @AfterEach
+    public void tearDown() {
+        File file = new File(TEST_FILE_PATH);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
 
     @Test
     public void testLoadRatesFromJson() throws Exception {
-        String testFile = "data/test-rates.json";
-
-        File file = new File(testFile);
+        File file = new File(TEST_FILE_PATH);
         File parent = file.getParentFile();
         if (parent != null && !parent.exists()) {
             parent.mkdirs();
         }
 
-        FileWriter writer = new FileWriter(testFile);
-        writer.write("{\"SGD\":1.0,\"USD\":0.74,\"EUR\":0.68}");
-        writer.close();
+        try (FileWriter writer = new FileWriter(TEST_FILE_PATH)) {
+            writer.write("{\"base\":\"EUR\",\"date\":\"2026-03-19\",\"rates\":{\"SGD\":1.46,\"USD\":1.09}}");
+        }
 
-        ExchangeRateStorage storage = new ExchangeRateStorage(testFile);
-        Map<String, Double> rates = storage.loadRates();
+        ExchangeRateStorage storage = new ExchangeRateStorage(TEST_FILE_PATH);
+        ExchangeRateData data = storage.load();
 
-        assertEquals(1.0, rates.get("SGD"));
-        assertEquals(0.74, rates.get("USD"));
-        assertEquals(0.68, rates.get("EUR"));
-
-        file.delete();
+        assertEquals("EUR", data.getBase());
+        assertEquals("2026-03-19", data.getDate());
+        assertEquals(1.46, data.getRates().get("SGD"));
+        assertEquals(1.09, data.getRates().get("USD"));
     }
 }

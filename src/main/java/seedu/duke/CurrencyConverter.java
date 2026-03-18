@@ -3,24 +3,57 @@ package seedu.duke;
 import java.util.Map;
 
 /**
- * Handles currency conversion using exchange rates.
+ * Converts between currencies using base-relative exchange rates.
  */
 public class CurrencyConverter {
-    private final Map<String, Double> rates;
+    private ExchangeRateData rateData;
 
-    public CurrencyConverter(Map<String, Double> rates) {
-        this.rates = rates;
+    public CurrencyConverter(ExchangeRateData rateData) {
+        updateRates(rateData);
     }
 
-    public double convert(double amount, String from, String to) {
-        if (!rates.containsKey(from) || !rates.containsKey(to)) {
+    public void updateRates(ExchangeRateData rateData) {
+        if (rateData == null || !rateData.isValid()) {
+            throw new IllegalArgumentException("Exchange-rate data is invalid.");
+        }
+        this.rateData = rateData;
+    }
+
+    public String getBaseCurrency() {
+        return rateData.getBase();
+    }
+
+    public String getRateDate() {
+        return rateData.getDate();
+    }
+
+    public double convert(double amount, String fromCurrency, String toCurrency) {
+        String from = CurrencyValidator.validateAndGet(fromCurrency);
+        String to = CurrencyValidator.validateAndGet(toCurrency);
+
+        if (from.equals(to)) {
+            return amount;
+        }
+
+        double fromRate = getRate(from);
+        double toRate = getRate(to);
+
+        double amountInBase = amount / fromRate;
+        return amountInBase * toRate;
+    }
+
+    private double getRate(String currency) {
+        if (currency.equals(rateData.getBase())) {
+            return 1.0;
+        }
+
+        Map<String, Double> rates = rateData.getRates();
+        Double rate = rates.get(currency);
+
+        if (rate == null) {
             throw new IllegalArgumentException("Unsupported currency.");
         }
 
-        double fromRate = rates.get(from);
-        double toRate = rates.get(to);
-
-        double amountInSGD = amount / fromRate;
-        return amountInSGD * toRate;
+        return rate;
     }
 }

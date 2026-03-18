@@ -1,7 +1,7 @@
 package seedu.duke;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the creation, validation, and update logic of the Transaction class.
@@ -51,7 +51,7 @@ public class TransactionTest {
         Assertions.assertTrue(output.contains("16/03/2023"));
         Assertions.assertTrue(output.contains("Supermarket"));
         Assertions.assertTrue(output.contains("60.50"));
-        Assertions.assertTrue(output.contains("debit")); // Unchanged
-        Assertions.assertTrue(output.contains("USD")); // Unchanged
+        Assertions.assertTrue(output.contains("debit"));
+        Assertions.assertTrue(output.contains("USD"));
     }
 }

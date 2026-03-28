@@ -110,11 +110,11 @@ public class TransactionsList {
         System.out.println("All transactions have been cleared.");
     }
 
-    public void editTransaction(int id, String date, String desc, List<String> postingStrings, String currency) {
+    public void editTransaction(int id, String date, String desc, List<Posting> newPostings, String currency) {
         logger.info("Editing transactions with ID: " + id);
         Transaction transaction = findById(id);
-        transaction.update(date, desc, postingStrings, currency);
-        save();
+        transaction.update(date, desc, newPostings, currency);
+        // save(); // Call your save method here
     }
 
     public Transaction getTransactionById(int id) {

@@ -135,17 +135,22 @@ public class Parser {
 
     private void confirmAndStoreConvertedTransaction(int id, String targetCurrency) {
         Transaction transaction = list.getTransactionById(id);
-        double convertedAmount = converter.convert(
-                transaction.getAmount(),
-                transaction.getCurrency(),
-                targetCurrency);
+        List<Posting> originalPostings = transaction.getPostings();
 
-        list.editTransaction(id, null, null, convertedAmount, null, targetCurrency);
+        List<Posting> convertedPostings = new ArrayList<>();
 
+        for (Posting posting : originalPostings) {
+            double convertedAmount = converter.convert(
+                    posting.getAmount(),
+                    transaction.getCurrency(),
+                    targetCurrency);
+            convertedPostings.add(new Posting(posting.getAccountName(), convertedAmount));
+        }
+
+        list.editTransaction(id, null, null, convertedPostings, targetCurrency);
         System.out.printf(
-                "Transaction %d confirmed and stored as %.2f %s.%n",
+                "Transaction %d confirmed and stored in %s.%n",
                 id,
-                convertedAmount,
                 targetCurrency);
     }
 
@@ -159,18 +164,7 @@ public class Parser {
 
         int updatedCount = 0;
         for (Transaction transaction : transactions) {
-            double convertedAmount = converter.convert(
-                    transaction.getAmount(),
-                    transaction.getCurrency(),
-                    targetCurrency);
-
-            list.editTransaction(
-                    transaction.getId(),
-                    null,
-                    null,
-                    convertedAmount,
-                    null,
-                    targetCurrency);
+            confirmAndStoreConvertedTransaction(transaction.getId(), targetCurrency);
             updatedCount++;
         }
 
@@ -255,8 +249,25 @@ public class Parser {
         return map;
     }
 
-    private String getFirstElementFromMap(Map<String, List<String>> map, String s) {
+    public static String getFirstElementFromMap(Map<String, List<String>> map, String s) {
         return map.containsKey(s) ? map.get(s).get(0) : null;
+    }
+
+    public static List<Posting> convertStringList2PostingList(List<String> postingStrings) {
+        List<Posting> converted = new ArrayList<Posting>();
+        for (String pStr : postingStrings) {
+            String[] parts = pStr.split("\\s+");
+            if (parts.length < 2) {
+                throw new IllegalArgumentException("Invalid posting format. Use: -p \"Account Amount\"");
+            }
+            try {
+                double amount = Double.parseDouble(parts[1]);
+                converted.add(new Posting(parts[0], amount));
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Amount must be a valid number: " + parts[1]);
+            }
+        }
+        return converted;
     }
 
     private void handleAdd(String args) {
@@ -270,8 +281,8 @@ public class Parser {
         if (postingStrings == null) {
             throw new IllegalArgumentException("Error: At least one posting (-p) is required.");
         }
-
-        Transaction t = new Transaction(date, desc, postingStrings, currency);
+        List<Posting> postings = convertStringList2PostingList(postingStrings);
+        Transaction t = new Transaction(date, desc, postings, currency);
         list.addTransaction(t);
         System.out.println("Transaction added successfully.");
     }
@@ -344,20 +355,14 @@ public class Parser {
         Map<String, List<String>> map = parseArguments(editArgs);
         String date = getFirstElementFromMap(map, "-d");
         String desc = getFirstElementFromMap(map, "-desc");
-        String amountStr = getFirstElementFromMap(map, "-a");
-        String type = getFirstElementFromMap(map, "-t");
+        List<String> postingStrings = map.get("-p");
         String currency = getFirstElementFromMap(map, "-c");
 
-        Double amount = null;
-        if (amountStr != null) {
-            try {
-                amount = Double.parseDouble(amountStr);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Amount must be a valid number.");
-            }
+        if (postingStrings == null) {
+            throw new IllegalArgumentException("Error: At least one posting (-p) is required.");
         }
-
-        list.editTransaction(id, date, desc, amount, type, currency);
+        List<Posting> postings = convertStringList2PostingList(postingStrings);
+        list.editTransaction(id, date, desc, postings, currency);
         System.out.println("Transaction edited successfully.");
     }
 
@@ -417,15 +422,15 @@ public class Parser {
         to = CurrencyValidator.validateAndGet(to);
 
         Transaction transaction = list.getTransactionById(id);
-        double result = converter.convert(transaction.getAmount(), transaction.getCurrency(), to);
+        for (Posting posting : transaction.getPostings()) {
+            double originalAmount = posting.getAmount();
+            double convertedAmount = converter.convert(originalAmount, transaction.getCurrency(), to);
 
-        System.out.printf(
-                "Transaction %d: %.2f %s = %.2f %s%n",
-                id,
-                transaction.getAmount(),
-                transaction.getCurrency(),
-                result,
-                to);
+            System.out.printf("  %-30s : %10.2f %-3s = %10.2f %-3s%n",
+                    posting.getAccountName(),
+                    originalAmount, transaction.getCurrency(),
+                    convertedAmount, to);
+        }
 
         pendingTransactionId = id;
         pendingTargetCurrency = to;

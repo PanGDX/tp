@@ -22,38 +22,27 @@ public class Transaction {
     /**
      * Constructor used when loading transactions from storage.
      */
-    private Transaction(int id, String dateStr, String description, List<String> postingStrings, String currencyStr) {
+    private Transaction(int id, String dateStr, String description, List<Posting> newPostings, String currencyStr) {
         // Centralized Validation
-        if (dateStr == null || description == null || postingStrings == null || currencyStr == null) {
+        if (dateStr == null || description == null || currencyStr == null) {
             throw new IllegalArgumentException("Missing required transaction details.");
         }
         if (description.trim().isEmpty()) {
             throw new IllegalArgumentException("Description cannot be empty.");
         }
-
+        if (newPostings != null && !newPostings.isEmpty()) {
+            this.postings.clear();
+            this.postings.addAll(newPostings);
+        }
         this.id = id;
         this.date = parseDate(dateStr);
         this.description = description;
         this.currency = CurrencyValidator.validateAndGet(currencyStr);
-
-        // Centralized Posting Parsing
-        for (String pStr : postingStrings) {
-            String[] parts = pStr.split("\\s+");
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Invalid posting format. Use: -p \"Account Amount\"");
-            }
-            try {
-                double amount = Double.parseDouble(parts[1]);
-                addPosting(parts[0], amount);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Amount must be a valid number: " + parts[1]);
-            }
-        }
     }
 
-    public Transaction(String dateStr, String description, List<String> postingStrings, String currencyStr) {
+    public Transaction(String dateStr, String description, List<Posting> newPostings, String currencyStr) {
         // Calls the Master Constructor above
-        this(nextId++, dateStr, description, postingStrings, currencyStr);
+        this(nextId++, dateStr, description, newPostings, currencyStr);
 
         // Validation check for ID (post-increment)
         assert this.id > 0 : "Auto-incremented ID must be positive.";
@@ -79,8 +68,8 @@ public class Transaction {
     }
 
     public static Transaction fromStorage(int id, String dateStr, String description,
-            List<String> postingStrings, String currencyStr) {
-        return new Transaction(id, dateStr, description, postingStrings, currencyStr);
+            List<Posting> newPostings, String currencyStr) {
+        return new Transaction(id, dateStr, description, newPostings, currencyStr);
     }
 
     public static void updateNextId(int nextIdValue) {
@@ -120,7 +109,7 @@ public class Transaction {
         return currency;
     }
 
-    public void update(String dateStr, String description, List<String> postingStrings, String currencyStr) {
+    public void update(String dateStr, String description, List<Posting> newPostings, String currencyStr) {
         if (dateStr != null) {
             this.date = parseDate(dateStr);
         }
@@ -131,24 +120,19 @@ public class Transaction {
             this.description = description;
         }
 
-        postings.clear();
-        for (String pStr : postingStrings) {
-            String[] parts = pStr.split("\\s+");
-            if (parts.length < 2) {
-                throw new IllegalArgumentException("Invalid posting format. Use: -p \"Account Amount\"");
-            }
-            try {
-                double amount = Double.parseDouble(parts[1]);
-                addPosting(parts[0], amount);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Amount must be a valid number: " + parts[1]);
-            }
+        if (newPostings != null && !newPostings.isEmpty()) {
+            this.postings.clear();
+            this.postings.addAll(newPostings);
         }
 
         if (currencyStr != null) {
             this.currency = CurrencyValidator.validateAndGet(currencyStr);
         }
-        assert this.description != null && !this.description.isEmpty() : "Description state is invalid after update.";
+
+        // Fundamental check: After an update, the transaction MUST still balance
+        if (!isBalanced()) {
+            throw new IllegalArgumentException("Update failed: Transaction is unbalanced.");
+        }
     }
 
     @Override

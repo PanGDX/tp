@@ -43,18 +43,33 @@ public class Storage {
                 }
 
                 String[] parts = line.split("\t", -1);
-                if (parts.length != 6) {
+                // We now expect 5 parts instead of 6: ID, Date, Desc, Currency, Postings
+                if (parts.length < 5) {
+                    logger.warning("Skipping malformed line in storage: " + line);
                     continue;
                 }
 
                 int id = Integer.parseInt(parts[0]);
                 String date = parts[1];
                 String description = unescape(parts[2]);
-                double amount = Double.parseDouble(parts[3]);
-                String type = parts[4];
-                String currency = parts[5];
+                String currency = parts[3];
+                String postingsJoined = parts[4];
 
-                Transaction transaction = Transaction.fromStorage(id, date, description, amount, type, currency);
+                // Deserialize the postings string back into the "Account Amount" format
+                List<String> postingStrings = new ArrayList<>();
+                if (!postingsJoined.isEmpty()) {
+                    String[] postingTokens = postingsJoined.split(";");
+                    for (String token : postingTokens) {
+                        String[] accAmt = token.split("=");
+                        if (accAmt.length == 2) {
+                            // Rebuild the string to pass into the Transaction constructor
+                            postingStrings.add(accAmt[0] + " " + accAmt[1]);
+                        }
+                    }
+                }
+                List<Posting> postings = Parser.convertStringList2PostingList(postingStrings);
+                // Call your Transaction factory/constructor
+                Transaction transaction = Transaction.fromStorage(id, date, description, postings, currency);
                 transactions.add(transaction);
 
                 if (id > maxId) {
@@ -95,12 +110,20 @@ public class Storage {
     }
 
     private String formatTransaction(Transaction t) {
+        // Serialize the list of postings into a single string:
+        // "Account1=50.0;Account2=-50.0"
+        List<String> serializedPostings = new ArrayList<>();
+        for (Posting p : t.getPostings()) {
+            serializedPostings.add(p.getAccountName() + "=" + p.getAmount());
+        }
+        String postingsStr = String.join(";", serializedPostings);
+
+        // The new format: ID \t Date \t Description \t Currency \t Postings
         return t.getId() + "\t"
                 + t.getDateString() + "\t"
                 + escape(t.getDescription()) + "\t"
-                + t.getAmount() + "\t"
-                + t.getType() + "\t"
-                + t.getCurrency();
+                + t.getCurrency() + "\t"
+                + postingsStr;
     }
 
     private String escape(String text) {

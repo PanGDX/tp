@@ -189,33 +189,33 @@ public class Parser {
         }
 
         switch (command) {
-            case "add":
-                handleAdd(arguments);
-                break;
-            case "list":
-                handleList(arguments);
-                break;
-            case "delete":
-                handleDelete(arguments);
-                break;
-            case "clear":
-                list.clearTransactions();
-                break;
-            case "edit":
-                handleEdit(arguments);
-                break;
-            case "convert":
-                handleConvert(arguments);
-                break;
-            case "rates":
-                handleRates(arguments);
-                break;
-            case "help":
-                handleHelp();
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.");
+        case "convert":
+            handleConvert(arguments);
+            break;
+        case "add":
+            handleAdd(arguments);
+            break;
+        case "list":
+            handleList(arguments);
+            break;
+        case "delete":
+            handleDelete(arguments);
+            break;
+        case "clear":
+            list.clearTransactions();
+            break;
+        case "edit":
+            handleEdit(arguments);
+            break;
+        case "rates":
+            handleRates(arguments);
+            break;
+        case "help":
+            handleHelp();
+            break;
+        default:
+            throw new IllegalArgumentException(
+                    "Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.");
         }
     }
 
@@ -226,8 +226,9 @@ public class Parser {
 
         for (String token : tokens) {
             token = token.trim();
-            if (token.isEmpty())
+            if (token.isEmpty()) {
                 continue;
+            }
 
             if (token.startsWith("-")) {
                 int spaceIdx = token.indexOf(' ');
@@ -254,17 +255,25 @@ public class Parser {
     }
 
     public static List<Posting> convertStringList2PostingList(List<String> postingStrings) {
-        List<Posting> converted = new ArrayList<Posting>();
+        List<Posting> converted = new ArrayList<>();
         for (String pStr : postingStrings) {
-            String[] parts = pStr.split("\\s+");
+            String cleanedStr = pStr.replace("\"", "").replace("'", "").trim();
+            String[] parts = cleanedStr.split("\\s+");
+
             if (parts.length < 2) {
                 throw new IllegalArgumentException("Invalid posting format. Use: -p \"Account Amount\"");
             }
             try {
-                double amount = Double.parseDouble(parts[1]);
-                converted.add(new Posting(parts[0], amount));
+                // The amount is always the last part
+                int lastIndex = parts.length - 1;
+                double amount = Double.parseDouble(parts[lastIndex].trim());
+
+                // Everything before the amount is the account name
+                String accountName = cleanedStr.substring(0, cleanedStr.lastIndexOf(parts[lastIndex])).trim();
+
+                converted.add(new Posting(accountName, amount));
             } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Amount must be a valid number: " + parts[1]);
+                throw new IllegalArgumentException("Amount must be a valid number.");
             }
         }
         return converted;
@@ -315,10 +324,11 @@ public class Parser {
             }
         } else {
             list.setAutoConvertDisplay(false);
+            list.listTransactions();
         }
 
         clearPendingConfirmation();
-        list.listTransactions();
+        
     }
 
     private void handleDelete(String args) {
@@ -460,8 +470,10 @@ public class Parser {
         System.out.println();
 
         System.out.println("1. add - Add a new transaction");
-        System.out.println("   Format: add -d DATE -desc DESCRIPTION -a AMOUNT -t TYPE -c CURRENCY");
-        System.out.println("   Example: add -d 18/03/2026 -desc Office supplies -a 45.50 -t debit -c SGD");
+        System.out.println("   Format: add -d DATE -desc DESCRIPTION -p POSTING1 -p POSTING2 -c CURRENCY");
+        System.out.println("   ASSETS = EQUITY - LIABILITIES + (INCOME - EXPENSES)");
+        System.out.println("   Each transaction must be balanced. This is checked by the system automatically.");
+        System.out.println("   Example: add -d 18/03/2026 -desc Office supplies -p \"Assets -45.50\" -p \"Expenses 45.50\" -c SGD");
         System.out.println();
 
         System.out.println("2. list - Display all transactions");

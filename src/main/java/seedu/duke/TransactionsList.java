@@ -77,22 +77,27 @@ public class TransactionsList {
             return;
         }
 
-        List<Posting> postings = transaction.getPostings();
+        System.out.printf("ID: %d | Date: %s | Desc: %s | [%s -> %s]%n",
+                transaction.getId(),
+                transaction.getDate(),
+                transaction.getDescription(),
+                transaction.getCurrency(),
+                displayCurrency);
 
+        // 2. Loop through postings to print the individual converted amounts
+        List<Posting> postings = transaction.getPostings();
         for (Posting posting : postings) {
             double converted = converter.convert(
                     posting.getAmount(),
                     transaction.getCurrency(),
                     displayCurrency);
-            if (transaction.getCurrency().equals(displayCurrency)) {
-                System.out.println(transaction);
-            } else {
-                System.out.printf(
-                        "%s | Display: %.2f %s%n",
-                        transaction,
-                        converted,
-                        displayCurrency);
-            }
+
+            // Format it cleanly to match your standard toString() spacing
+            System.out.printf("    %-30s : %10.2f | Display: %.2f %s%n",
+                    posting.getAccountName(),
+                    posting.getAmount(),
+                    converted,
+                    displayCurrency);
         }
     }
 

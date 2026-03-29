@@ -38,10 +38,26 @@ public class TransactionsList {
         this.autoConvertDisplay = autoConvertDisplay;
     }
 
-    public void addTransaction(Transaction transaction) {
-        logger.info("Adding transactions: " + transaction);
-        transactions.add(transaction);
-        save();
+    public void addTransaction(Transaction t) {
+        logger.info("Adding transactions: " + t);
+        if (t.isBalanced()) {
+            transactions.add(t);
+            save();
+        } else {
+            throw new IllegalArgumentException("Transaction is unbalanced!");
+        }
+    }
+
+    public double getAccountBalance(String accountName) {
+        double total = 0;
+        for (Transaction t : transactions) {
+            for (Posting p : t.getPostings()) {
+                if (p.getAccountName().startsWith(accountName)) {
+                    total += p.getAmount();
+                }
+            }
+        }
+        return total;
     }
 
     public void listTransactions() {
@@ -61,21 +77,27 @@ public class TransactionsList {
             return;
         }
 
-        double converted = converter.convert(
-                transaction.getAmount(),
+        System.out.printf("ID: %d | Date: %s | Desc: %s | [%s -> %s]%n",
+                transaction.getId(),
+                transaction.getDate(),
+                transaction.getDescription(),
                 transaction.getCurrency(),
-                displayCurrency
-        );
+                displayCurrency);
 
-        if (transaction.getCurrency().equals(displayCurrency)) {
-            System.out.println(transaction);
-        } else {
-            System.out.printf(
-                    "%s | Display: %.2f %s%n",
-                    transaction,
+        // 2. Loop through postings to print the individual converted amounts
+        List<Posting> postings = transaction.getPostings();
+        for (Posting posting : postings) {
+            double converted = converter.convert(
+                    posting.getAmount(),
+                    transaction.getCurrency(),
+                    displayCurrency);
+
+            // Format it cleanly to match your standard toString() spacing
+            System.out.printf("    %-30s : %10.2f | Display: %.2f %s%n",
+                    posting.getAccountName(),
+                    posting.getAmount(),
                     converted,
-                    displayCurrency
-            );
+                    displayCurrency);
         }
     }
 
@@ -93,11 +115,11 @@ public class TransactionsList {
         System.out.println("All transactions have been cleared.");
     }
 
-    public void editTransaction(int id, String date, String desc, Double amount, String type, String currency) {
+    public void editTransaction(int id, String date, String desc, List<Posting> newPostings, String currency) {
         logger.info("Editing transactions with ID: " + id);
         Transaction transaction = findById(id);
-        transaction.update(date, desc, amount, type, currency);
-        save();
+        transaction.update(date, desc, newPostings, currency);
+        // save(); // Call your save method here
     }
 
     public Transaction getTransactionById(int id) {

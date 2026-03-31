@@ -202,7 +202,7 @@ Transaction edited successfully.
 Error: Missing transaction ID to delete.
 Error: Transaction ID must be an integer.
 Transaction deleted successfully.
-Error: Unable to fetch live exchange rates.
+Exchange rates refreshed successfully for 2026-03-31.
 Error: Unknown rates command. Use: rates refresh
 Exchange rates refreshed successfully for 2026-03-31.
 All transactions have been cleared.

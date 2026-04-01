@@ -85,6 +85,14 @@ Available commands:
 13. exit - Exit the application
     Format: exit
 
+14. balance - Generate Balance Sheet
+    Format: balance
+    Optional A: balance -to CURRENCY
+    Optional B: balance -acc ACCOUNT
+    Optional C: balance -acc ACCOUNT -to CURRENCY
+    Example: balance -to USD
+    Example: balance -acc Assets:Bank
+
 === Additional Information ===
 - DATE format: DD/MM/YYYY (e.g., 18/03/2026)
 - CURRENCY must be one of: SGD, USD, EUR
@@ -99,8 +107,81 @@ Available commands:
 
 For detailed documentation, please refer to the User Guide.
 Transaction added successfully.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: ORIGINAL TRANSACTION CURRENCIES
+
+ASSETS
+  Assets:Cash                                        50.00
+  Total Assets                                     50.00
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    100.00
+  Retained Earnings Breakdown
+    Expenses:General                                  -50.00
+  Current Period Net Income                       -50.00
+  Total Equity                                     50.00
+
+CHECK
+  Total Assets                                     50.00
+  Liabilities + Total Equity                       50.00
+  Equation Status                             PASS
+=========================
 Transaction added successfully.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: ORIGINAL TRANSACTION CURRENCIES
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                        50.00
+  Total Assets                                    250.00
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    100.00
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -50.00
+  Current Period Net Income                       150.00
+  Total Equity                                    250.00
+
+CHECK
+  Total Assets                                    250.00
+  Liabilities + Total Equity                      250.00
+  Equation Status                             PASS
+=========================
 Transaction added successfully.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: ORIGINAL TRANSACTION CURRENCIES
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                       350.00
+  Total Assets                                    550.00
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    400.00
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -50.00
+  Current Period Net Income                       150.00
+  Total Equity                                    550.00
+
+CHECK
+  Total Assets                                    550.00
+  Liabilities + Total Equity                      550.00
+  Equation Status                             PASS
+=========================
 Transaction added successfully.
 Transaction added successfully.
 ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD]
@@ -197,9 +278,109 @@ Type 'confirm all' to store ALL transactions in USD.
 Type 'confirm ID' to store one displayed transaction in USD.
 Example: confirm 3
 Enter any other command to ignore.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: USD
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                       364.33
+  Total Assets                                    564.33
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    401.66
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -37.33
+  Current Period Net Income                       162.67
+  Total Equity                                    564.33
+
+CHECK
+  Total Assets                                    564.33
+  Liabilities + Total Equity                      564.33
+  Equation Status                             PASS
+=========================
 Transaction 1 confirmed and stored in USD.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: USD
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                       364.33
+  Total Assets                                    564.33
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    401.66
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -37.33
+  Current Period Net Income                       162.67
+  Total Equity                                    564.33
+
+CHECK
+  Total Assets                                    564.33
+  Liabilities + Total Equity                      564.33
+  Equation Status                             PASS
+=========================
 Transaction 2 confirmed and stored in USD.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: USD
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                       364.33
+  Total Assets                                    564.33
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    401.66
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -37.33
+  Current Period Net Income                       162.67
+  Total Equity                                    564.33
+
+CHECK
+  Total Assets                                    564.33
+  Liabilities + Total Equity                      564.33
+  Equation Status                             PASS
+=========================
 Transaction 3 confirmed and stored in USD.
+===== BALANCE SHEET =====
+Scope: ALL ACCOUNTS
+Report Currency: USD
+
+ASSETS
+  Assets:Bank:Main                                  200.00
+  Assets:Cash                                       364.33
+  Total Assets                                    564.33
+
+LIABILITIES
+  Total Liabilities                                 0.00
+
+EQUITY
+  Equity:Capital                                    401.66
+  Retained Earnings Breakdown
+    Income:Sales                                      200.00
+    Expenses:General                                  -37.33
+  Current Period Net Income                       162.67
+  Total Equity                                    564.33
+
+CHECK
+  Total Assets                                    564.33
+  Liabilities + Total Equity                      564.33
+  Equation Status                             PASS
+=========================
 Transaction 4 confirmed and stored in USD.
 Transaction 5 confirmed and stored in USD.
 All 5 transactions have been confirmed and stored in USD.

@@ -25,6 +25,10 @@ confirm all
 
 edit 1 -desc "Edited Office Lunch" -p "Expenses:Food 20" -p "Assets:Cash -20"
 
+balance
+balance -to USD
+balance -acc Assets
+
 delete
 delete abc
 delete -match Coffee
@@ -34,6 +38,7 @@ list
 
 delete -begin 01/01/2026 -end 15/01/2026
 list
+balance
 
 
 clear

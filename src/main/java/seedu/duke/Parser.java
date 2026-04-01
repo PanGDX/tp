@@ -367,29 +367,31 @@ public class Parser {
 
         // 2. Handle Filtered Deletion
         Map<String, List<String>> map = parseArguments(args);
-        String beginString = getFirstElementFromMap(map, "-begin");
-        String endString = getFirstElementFromMap(map, "-end");
+        String acc = getFirstElementFromMap(map, "-acc");
+        String startStr = getFirstElementFromMap(map, "-begin");
+        String endStr = getFirstElementFromMap(map, "-end");
         String regex = getFirstElementFromMap(map, "-match");
 
-        // SAFETY CHECK: If no valid flags were provided, do NOT proceed.
-        // Otherwise, a typo like "-matsh" would result in deleting everything.
-        if (beginString == null && endString == null && regex == null) {
+
+        if (startStr == null && endStr == null && regex == null) {
             throw new IllegalArgumentException("No valid filters provided. Use -begin, -end, or -match.");
         }
 
-        // Parse dates (using your Transaction.parseDate helper)
-        LocalDate beginDate = (beginString != null) ? Transaction.parseDate(beginString) : null;
-        LocalDate endDate = (endString != null) ? Transaction.parseDate(endString) : null;
 
-        // Start with all transactions
         List<Transaction> toDelete = new ArrayList<>(list.getTransactions());
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate start = (startStr != null) ? LocalDate.parse(startStr, formatter) : null;
+            LocalDate end = (endStr != null) ? LocalDate.parse(endStr, formatter) : null;
 
-        // Apply filters (Our filter functions handle 'null' as "no limit")
-        toDelete = TransactionsList.filterTransactionsByDate(toDelete, beginDate, endDate);
-
-        if (regex != null) {
+            toDelete = TransactionsList.filterTransactionsByDate(toDelete, start, end);
             toDelete = TransactionsList.filterTransactionsByRegex(toDelete, regex);
+            toDelete = TransactionsList.filterTransactionsByAccount(toDelete, acc);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Dates must be in DD/MM/YYYY format.");
         }
+
+        
 
         // 3. Execution
         if (toDelete.isEmpty()) {
@@ -542,23 +544,16 @@ public class Parser {
                 "\"Assets:Cash -45.50\" -p \"Expenses:OfficeSupplies 45.50\" -c SGD");
         System.out.println();
 
-        System.out.println("2. list - Display all transactions");
-        System.out.println("   Format: list");
-        System.out.println("   Optional A: list -to CURRENCY");
-        System.out.println("   Optional B: list -acc ACCOUNT");
-        System.out.println("   Optional C: list -acc ACCOUNT -to CURRENCY");
-        System.out.println("   Example: list -acc Assets");
-        System.out.println("   Example: list -acc Assets:Bank -to USD");
+        System.out.println("2. list - Display and filter transactions");
+        System.out.println("   Format: list [-acc ACCOUNT] [-begin DATE] [-end DATE] [-match REGEX] [-to CURRENCY]");
+        System.out.println("   - All flags are optional and can be combined (layered).");
+        System.out.println("   - Dates must be in DD/MM/YYYY format.");
+        System.out.println("   - Using -acc shows only postings for that account category.");
+        System.out.println("   Example (Layered): list -acc Expenses -begin 01/01/2026 -end 31/01/2026");
+        System.out.println("   Example (Regex):   list -match \"(Lunch|Dinner)\"");
         System.out.println();
 
-        System.out.println("3. list -acc ACCOUNT - Filter transactions by hierarchical account");
-        System.out.println("   Format: list -acc ACCOUNT");
-        System.out.println("   Example: list -acc Expenses");
-        System.out.println("   Example: list -acc Assets:Bank");
-        System.out.println("   Only postings under the given account category will be shown.");
-        System.out.println();
-
-        System.out.println("4. list -to CURRENCY - Display transactions with converted view values");
+        System.out.println("3. list -to CURRENCY - Display transactions with converted view values");
         System.out.println("   Format: list -to CURRENCY");
         System.out.println("   Example: list -to USD");
         System.out.println("   By default, this is a view-only feature.");
@@ -567,35 +562,39 @@ public class Parser {
         System.out.println("   Example: confirm 3");
         System.out.println();
 
-        System.out.println("5. edit - Modify an existing transaction");
+        System.out.println("4. edit - Modify an existing transaction");
         System.out.println("   Format: edit ID [-date DATE] [-desc DESC] [-p POSTING] [-c CURRENCY]");
         System.out.println("   Example: edit 1 -desc Updated description -p " +
                 "\"Expenses:Food 50\" -p \"Assets:Cash -50\"");
         System.out.println();
 
-        System.out.println("6. delete - Remove a transaction");
-        System.out.println("   Format: delete ID");
-        System.out.println("   Example: delete 3");
+        System.out.println("5. delete - Remove a transaction");
+        System.out.println("   Format (Single): delete ID");
+        System.out.println("   Format (Bulk):   delete [-begin DATE] [-end DATE] [-match REGEX] [-acc ACCOUNT]");
+        System.out.println("   Note: Bulk deletion requires at least one filter flag.");
+        System.out.println("   Example (Single): delete 3");
+        System.out.println("   Example (Range):  delete -begin 01/01/2026 -end 15/01/2026");
+        System.out.println("   Example (Match):  delete -match Steak");
         System.out.println();
 
-        System.out.println("7. clear - Remove all transactions");
+        System.out.println("6. clear - Remove all transactions");
         System.out.println("   Format: clear");
         System.out.println();
 
-        System.out.println("8. convert - Convert currencies");
+        System.out.println("7. convert - Convert currencies");
         System.out.println("   Format: convert -a AMOUNT -from SOURCE_CURRENCY -to TARGET_CURRENCY");
         System.out.println("   Example: convert -a 100 -from USD -to SGD");
         System.out.println("   Note: This is a view-mode feature only. It does NOT create or store a transaction.");
         System.out.println();
 
-        System.out.println("9. convert transaction - Convert an existing transaction");
+        System.out.println("8. convert transaction - Convert an existing transaction");
         System.out.println("   Format: convert transaction ID -to TARGET_CURRENCY");
         System.out.println("   Example: convert transaction 3 -to SGD");
         System.out.println("   By default, this is a view-mode feature only & won't modify the stored transaction.");
         System.out.println("   To store the converted transaction, type: confirm");
         System.out.println();
 
-        System.out.println("10. confirm - Store viewed converted transaction(s)");
+        System.out.println("9. confirm - Store viewed converted transaction(s)");
         System.out.println("   After convert transaction ...");
         System.out.println("   Format: confirm");
         System.out.println();
@@ -606,15 +605,15 @@ public class Parser {
         System.out.println("   Example: confirm 3");
         System.out.println();
 
-        System.out.println("11. rates - Refresh live exchange rates");
+        System.out.println("10. rates - Refresh live exchange rates");
         System.out.println("    Format: rates refresh");
         System.out.println();
 
-        System.out.println("12. help - Show this help message");
+        System.out.println("11. help - Show this help message");
         System.out.println("    Format: help");
         System.out.println();
 
-        System.out.println("13. exit - Exit the application");
+        System.out.println("12. exit - Exit the application");
         System.out.println("    Format: exit");
         System.out.println();
 

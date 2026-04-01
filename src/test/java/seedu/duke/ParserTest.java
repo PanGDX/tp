@@ -96,7 +96,7 @@ public class ParserTest {
 
     @Test
     public void testAddCommandSuccess() {
-        String input = "add transaction -d 15/03/2023 -desc Lunch -p " +
+        String input = "add transaction -date 15/03/2023 -desc Lunch -p " +
                 "\"Expenses 15.5\" -p \"Assets -15.5\" -c SGD\nexit";
         runParserWithInput(input);
 
@@ -157,7 +157,7 @@ public class ParserTest {
 
         String output = outputStreamCaptor.toString();
         assertTrue(output.contains("All transactions have been cleared."));
-        assertTrue(output.contains("No transactions found."));
+        assertTrue(output.contains("No matching transactions found."));
     }
 
     @Test

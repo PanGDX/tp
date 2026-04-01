@@ -11,9 +11,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
 
 /**
  * Reads command line inputs, checks for format validation, handles errors, and
@@ -195,33 +192,33 @@ public class Parser {
         }
 
         switch (command) {
-            case "convert":
-                handleConvert(arguments);
-                break;
-            case "add":
-                handleAdd(arguments);
-                break;
-            case "list":
-                handleList(arguments);
-                break;
-            case "delete":
-                handleDelete(arguments);
-                break;
-            case "clear":
-                list.clearTransactions();
-                break;
-            case "edit":
-                handleEdit(arguments);
-                break;
-            case "rates":
-                handleRates(arguments);
-                break;
-            case "help":
-                handleHelp();
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.");
+        case "convert":
+            handleConvert(arguments);
+            break;
+        case "add":
+            handleAdd(arguments);
+            break;
+        case "list":
+            handleList(arguments);
+            break;
+        case "delete":
+            handleDelete(arguments);
+            break;
+        case "clear":
+            list.clearTransactions();
+            break;
+        case "edit":
+            handleEdit(arguments);
+            break;
+        case "rates":
+            handleRates(arguments);
+            break;
+        case "help":
+            handleHelp();
+            break;
+        default:
+            throw new IllegalArgumentException(
+                    "Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.");
         }
     }
 
@@ -285,41 +282,11 @@ public class Parser {
         return converted;
     }
 
-    private static List<Transaction> filterTransactionsByDate(List<Transaction> transactions,
-            LocalDate beginDate,
-            LocalDate endDate) {
-        return transactions.stream()
-                .filter(t -> {
-                    LocalDate date = t.getDate();
 
-                    // If beginDate is null, it's always true.
-                    // Otherwise, check if date is NOT before beginDate (i.e., after or equal).
-                    boolean matchesBegin = (beginDate == null) || !date.isBefore(beginDate);
-
-                    // If endDate is null, it's always true.
-                    // Otherwise, check if date is NOT after endDate (i.e., before or equal).
-                    boolean matchesEnd = (endDate == null) || !date.isAfter(endDate);
-
-                    return matchesBegin && matchesEnd;
-                })
-                .collect(Collectors.toList());
-    }
-
-    private static List<Transaction> filterTransactionsByRegex(List<Transaction> transactions,
-            String regexStr) {
-        try {
-            Pattern pattern = Pattern.compile(regexStr, Pattern.CASE_INSENSITIVE);
-            return transactions.stream()
-                    .filter(t -> pattern.matcher(t.getDescription()).find())
-                    .collect(Collectors.toList());
-        } catch (PatternSyntaxException e) {
-            throw new IllegalArgumentException("Invalid Regex pattern: " + regexStr);
-        }
-    }
 
     private void handleAdd(String args) {
         Map<String, List<String>> map = parseArguments(args);
-        String date = getFirstElementFromMap(map, "-d");
+        String date = getFirstElementFromMap(map, "-date");
         String desc = getFirstElementFromMap(map, "-desc");
         List<String> postingStrings = map.get("-p");
         String currency = getFirstElementFromMap(map, "-c");
@@ -340,6 +307,9 @@ public class Parser {
         Map<String, List<String>> map = parseArguments(args);
         String to = getFirstElementFromMap(map, "-to");
         String acc = getFirstElementFromMap(map, "-acc");
+        String regex = getFirstElementFromMap(map, "-match");
+        String startStr = getFirstElementFromMap(map, "-begin");
+        String endStr = getFirstElementFromMap(map, "-end");
 
         if (to != null) {
             to = CurrencyValidator.validateAndGet(to);
@@ -349,25 +319,21 @@ public class Parser {
             list.setAutoConvertDisplay(false);
         }
 
-        if (acc != null) {
-            list.listTransactionsByAccount(acc);
+        List<Transaction> results = new ArrayList<>(list.getTransactions());
 
-            if (to != null && !list.getTransactions().isEmpty()) {
-                pendingTransactionId = null;
-                pendingTargetCurrency = to;
-                pendingFromListView = true;
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate start = (startStr != null) ? LocalDate.parse(startStr, formatter) : null;
+            LocalDate end = (endStr != null) ? LocalDate.parse(endStr, formatter) : null;
 
-                System.out.println();
-                System.out.println("The displayed values are view-only by default.");
-                System.out.println("Type 'confirm all' to store ALL transactions in " + to + ".");
-                System.out.println("Type 'confirm ID' to store one displayed transaction in " + to + ".");
-                System.out.println("Example: confirm 3");
-                System.out.println("Enter any other command to ignore.");
-            }
-            return;
+            results = TransactionsList.filterTransactionsByDate(results, start, end);
+            results = TransactionsList.filterTransactionsByRegex(results, regex);
+            results = TransactionsList.filterTransactionsByAccount(results, acc);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Dates must be in DD/MM/YYYY format.");
         }
 
-        list.listTransactions();
+        list.renderTransactions(results);
 
         if (to != null && !list.getTransactions().isEmpty()) {
             pendingTransactionId = null;
@@ -383,43 +349,60 @@ public class Parser {
         }
     }
 
+    
+
     private void handleDelete(String args) {
-        Map<String, List<String>> map = parseArguments(args);
-        String beginString = getFirstElementFromMap(map, "-b");
-        LocalDate beginDate = null;
-        if(beginString != null){
-            beginDate = Transaction.parseDate(beginString);
-        }
-        String endString = getFirstElementFromMap(map, "-e");
-        LocalDate endDate = null;
-        if(endString != null){
-            endDate = Transaction.parseDate(endString);
-        }
-        String regex = getFirstElementFromMap(map, "-r");
-
-
-        // Retrieve all transactions (assuming list.getAllTransactions() exists)
-        List<Transaction> toDelete = new ArrayList<>(list.getTransactions());
-
-        // Apply filters
-        if (beginDate != LocalDate.MIN || endDate != LocalDate.MAX) {
-            toDelete = filterTransactionsByDate(toDelete, beginDate, endDate);
-        }
-        if (regex != null) {
-            toDelete = filterTransactionsByRegex(toDelete, regex);
+        String trimmedArgs = args.trim();
+        if (trimmedArgs.isEmpty()) {
+            throw new IllegalArgumentException("Missing transaction ID or filter flags to delete.");
         }
 
-        if (toDelete.isEmpty()) {
-            System.out.println("No transactions found matching the specified criteria.");
+        // 1. Handle Single ID Deletion (e.g., "delete 5")
+        if (trimmedArgs.matches("^\\d+$")) {
+            int id = Integer.parseInt(trimmedArgs);
+            list.deleteTransaction(id);
+            System.out.println("Successfully deleted Transaction " + id);
             return;
         }
 
-        // Perform bulk deletion
+        // 2. Handle Filtered Deletion
+        Map<String, List<String>> map = parseArguments(args);
+        String beginString = getFirstElementFromMap(map, "-begin");
+        String endString = getFirstElementFromMap(map, "-end");
+        String regex = getFirstElementFromMap(map, "-match");
+
+        // SAFETY CHECK: If no valid flags were provided, do NOT proceed.
+        // Otherwise, a typo like "-matsh" would result in deleting everything.
+        if (beginString == null && endString == null && regex == null) {
+            throw new IllegalArgumentException("No valid filters provided. Use -begin, -end, or -match.");
+        }
+
+        // Parse dates (using your Transaction.parseDate helper)
+        LocalDate beginDate = (beginString != null) ? Transaction.parseDate(beginString) : null;
+        LocalDate endDate = (endString != null) ? Transaction.parseDate(endString) : null;
+
+        // Start with all transactions
+        List<Transaction> toDelete = new ArrayList<>(list.getTransactions());
+
+        // Apply filters (Our filter functions handle 'null' as "no limit")
+        toDelete = TransactionsList.filterTransactionsByDate(toDelete, beginDate, endDate);
+
+        if (regex != null) {
+            toDelete = TransactionsList.filterTransactionsByRegex(toDelete, regex);
+        }
+
+        // 3. Execution
+        if (toDelete.isEmpty()) {
+            System.out.println("No transactions found matching the specified criteria. Nothing deleted.");
+            return;
+        }
+
+        int count = toDelete.size();
         for (Transaction t : toDelete) {
             list.deleteTransaction(t.getId());
         }
 
-        System.out.println("Successfully deleted " + toDelete.size() + " transaction(s) matching criteria.");
+        System.out.println("Successfully deleted " + count + " transaction(s) matching criteria.");
     }
 
     private void handleEdit(String args) {
@@ -441,7 +424,7 @@ public class Parser {
         }
 
         Map<String, List<String>> map = parseArguments(editArgs);
-        String date = getFirstElementFromMap(map, "-d");
+        String date = getFirstElementFromMap(map, "-date");
         String desc = getFirstElementFromMap(map, "-desc");
         List<String> postingStrings = map.get("-p");
         String currency = getFirstElementFromMap(map, "-c");
@@ -550,12 +533,12 @@ public class Parser {
         System.out.println();
 
         System.out.println("1. add - Add a new transaction");
-        System.out.println("   Format: add -d DATE -desc DESCRIPTION -p POSTING1 -p POSTING2 -c CURRENCY");
+        System.out.println("   Format: add -date DATE -desc DESCRIPTION -p POSTING1 -p POSTING2 -c CURRENCY");
         System.out.println("   ASSETS = EQUITY - LIABILITIES + (INCOME - EXPENSES)");
         System.out.println("   Each transaction must be balanced. This is checked by the system automatically.");
         System.out.println("   Postings support hierarchical account names using ':'");
         System.out.println("   Examples: Assets:Cash, Assets:Bank:DBS, Expenses:Food, Income:Salary");
-        System.out.println("   Example: add -d 18/03/2026 -desc Office supplies -p " +
+        System.out.println("   Example: add -date 18/03/2026 -desc Office supplies -p " +
                 "\"Assets:Cash -45.50\" -p \"Expenses:OfficeSupplies 45.50\" -c SGD");
         System.out.println();
 
@@ -585,7 +568,7 @@ public class Parser {
         System.out.println();
 
         System.out.println("5. edit - Modify an existing transaction");
-        System.out.println("   Format: edit ID [-d DATE] [-desc DESC] [-p POSTING] [-c CURRENCY]");
+        System.out.println("   Format: edit ID [-date DATE] [-desc DESC] [-p POSTING] [-c CURRENCY]");
         System.out.println("   Example: edit 1 -desc Updated description -p " +
                 "\"Expenses:Food 50\" -p \"Assets:Cash -50\"");
         System.out.println();

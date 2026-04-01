@@ -15,12 +15,12 @@ Hello from
 Available commands:
 
 1. add - Add a new transaction
-   Format: add -d DATE -desc DESCRIPTION -p POSTING1 -p POSTING2 -c CURRENCY
+   Format: add -date DATE -desc DESCRIPTION -p POSTING1 -p POSTING2 -c CURRENCY
    ASSETS = EQUITY - LIABILITIES + (INCOME - EXPENSES)
    Each transaction must be balanced. This is checked by the system automatically.
    Postings support hierarchical account names using ':'
    Examples: Assets:Cash, Assets:Bank:DBS, Expenses:Food, Income:Salary
-   Example: add -d 18/03/2026 -desc Office supplies -p "Assets:Cash -45.50" -p "Expenses:OfficeSupplies 45.50" -c SGD
+   Example: add -date 18/03/2026 -desc Office supplies -p "Assets:Cash -45.50" -p "Expenses:OfficeSupplies 45.50" -c SGD
 
 2. list - Display all transactions
    Format: list
@@ -45,7 +45,7 @@ Available commands:
    Example: confirm 3
 
 5. edit - Modify an existing transaction
-   Format: edit ID [-d DATE] [-desc DESC] [-p POSTING] [-c CURRENCY]
+   Format: edit ID [-date DATE] [-desc DESC] [-p POSTING] [-c CURRENCY]
    Example: edit 1 -desc Updated description -p "Expenses:Food 50" -p "Assets:Cash -50"
 
 6. delete - Remove a transaction
@@ -98,91 +98,99 @@ Available commands:
 - Valid root account types are: Assets, Liabilities, Equity, Income, Expenses
 
 For detailed documentation, please refer to the User Guide.
-Error: Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.
-Error: Error: At least one posting (-p) is required.
-Error: Error: At least one posting (-p) is required.
-Error: Invalid posting format. Use: -p "Account Amount"
-Error: Amount must be a valid number.
 Transaction added successfully.
 Transaction added successfully.
 Transaction added successfully.
 Transaction added successfully.
-ID: 1 | Date: 18/03/2026 | Desc: Transaction 1 | [SGD]
-    Assets:Cash                    :     100.00
-    Equity:Capital                 :     100.00
-ID: 2 | Date: 19/03/2026 | Desc: Transaction 2 | [SGD]
-    Expenses:General               :      50.00
+Transaction added successfully.
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD]
+    Expenses:Food                  :      15.00
+    Assets:Cash                    :     -15.00
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD]
+    Expenses:Food                  :      50.00
     Assets:Cash                    :     -50.00
-ID: 3 | Date: 20/03/2026 | Desc: Transaction 3 | [USD]
-    Assets:Bank:Main               :     200.00
-    Income:Sales                   :     200.00
-ID: 4 | Date: 21/03/2026 | Desc: Transaction 4 | [EUR]
-    Assets:Cash                    :     300.00
-    Equity:Capital                 :     300.00
-Error: Missing arguments for convert.
-Error: Amount must be a valid number.
-100.00 SGD = 74.66 USD
-Error: Missing arguments for convert.
-Error: Transaction ID must be an integer.
-Error: Missing target currency.
-  Assets:Cash                    :     100.00 SGD =      74.66 USD
-  Equity:Capital                 :     100.00 SGD =      74.66 USD
-This converted value is view-only by default.
-Type 'confirm' to store this transaction in USD.
-Enter any other command to ignore.
-Error: After 'convert transaction', use only 'confirm' to store the viewed transaction.
-Transaction 1 confirmed and stored in USD.
-  Expenses:General               :      50.00 SGD =      34.25 EUR
-  Assets:Cash                    :     -50.00 SGD =     -34.25 EUR
-This converted value is view-only by default.
-Type 'confirm' to store this transaction in EUR.
-Enter any other command to ignore.
-ID: 1 | Date: 18/03/2026 | Desc: Transaction 1 | [USD]
-    Assets:Cash                    :      74.66
-    Equity:Capital                 :      74.66
-ID: 2 | Date: 19/03/2026 | Desc: Transaction 2 | [SGD]
-    Expenses:General               :      50.00
+ID: 3 | Date: 10/01/2026 | Desc: "Taxi to Work" | [SGD]
+    Expenses:Transport             :      20.00
+    Assets:Cash                    :     -20.00
+ID: 4 | Date: 01/02/2026 | Desc: "Morning Coffee" | [SGD]
+    Expenses:Food                  :       5.00
+    Assets:Cash                    :      -5.00
+ID: 5 | Date: 15/03/2026 | Desc: "Netflix" | [USD]
+    Expenses:Entertainment         :      15.00
+    Assets:Credit                  :     -15.00
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD]
+    Expenses:Food                  :      15.00
+    Assets:Cash                    :     -15.00
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD]
+    Expenses:Food                  :      50.00
     Assets:Cash                    :     -50.00
-ID: 3 | Date: 20/03/2026 | Desc: Transaction 3 | [USD]
-    Assets:Bank:Main               :     200.00
-    Income:Sales                   :     200.00
-ID: 4 | Date: 21/03/2026 | Desc: Transaction 4 | [EUR]
-    Assets:Cash                    :     300.00
-    Equity:Capital                 :     300.00
-Error: Unknown command. Use add, list, edit, delete, clear, convert, rates, help, or exit.
-ID: 1 | Date: 18/03/2026 | Desc: Transaction 1 | [USD -> EUR]
-    Assets:Cash                    :      74.66 | Display: 68.49 EUR
-    Equity:Capital                 :      74.66 | Display: 68.49 EUR
-ID: 2 | Date: 19/03/2026 | Desc: Transaction 2 | [SGD -> EUR]
-    Expenses:General               :      50.00 | Display: 34.25 EUR
+ID: 4 | Date: 01/02/2026 | Desc: "Morning Coffee" | [SGD]
+    Expenses:Food                  :       5.00
+    Assets:Cash                    :      -5.00
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD]
+    Expenses:Food                  :      15.00
+    Assets:Cash                    :     -15.00
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD]
+    Expenses:Food                  :      50.00
+    Assets:Cash                    :     -50.00
+ID: 3 | Date: 10/01/2026 | Desc: "Taxi to Work" | [SGD]
+    Expenses:Transport             :      20.00
+    Assets:Cash                    :     -20.00
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD]
+    Expenses:Food                  :      15.00
+    Assets:Cash                    :     -15.00
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD]
+    Expenses:Food                  :      50.00
+    Assets:Cash                    :     -50.00
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD -> USD]
+    Expenses:Food                  :      15.00 | Display: 11.20 USD
+    Assets:Cash                    :     -15.00 | Display: -11.20 USD
+
+The displayed values are view-only by default.
+Type 'confirm all' to store ALL transactions in USD.
+Type 'confirm ID' to store one displayed transaction in USD.
+Example: confirm 3
+Enter any other command to ignore.
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [SGD -> EUR]
+    Expenses:Food                  :      15.00 | Display: 10.27 EUR
+    Assets:Cash                    :     -15.00 | Display: -10.27 EUR
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD -> EUR]
+    Expenses:Food                  :      50.00 | Display: 34.25 EUR
     Assets:Cash                    :     -50.00 | Display: -34.25 EUR
-ID: 3 | Date: 20/03/2026 | Desc: Transaction 3 | [USD -> EUR]
-    Assets:Bank:Main               :     200.00 | Display: 183.49 EUR
-    Income:Sales                   :     200.00 | Display: 183.49 EUR
-ID: 4 | Date: 21/03/2026 | Desc: Transaction 4 | [EUR -> EUR]
-    Assets:Cash                    :     300.00 | Display: 300.00 EUR
-    Equity:Capital                 :     300.00 | Display: 300.00 EUR
+ID: 3 | Date: 10/01/2026 | Desc: "Taxi to Work" | [SGD -> EUR]
+    Expenses:Transport             :      20.00 | Display: 13.70 EUR
+    Assets:Cash                    :     -20.00 | Display: -13.70 EUR
+ID: 4 | Date: 01/02/2026 | Desc: "Morning Coffee" | [SGD -> EUR]
+    Expenses:Food                  :       5.00 | Display: 3.42 EUR
+    Assets:Cash                    :      -5.00 | Display: -3.42 EUR
+ID: 5 | Date: 15/03/2026 | Desc: "Netflix" | [USD -> EUR]
+    Expenses:Entertainment         :      15.00 | Display: 13.76 EUR
+    Assets:Credit                  :     -15.00 | Display: -13.76 EUR
 
 The displayed values are view-only by default.
 Type 'confirm all' to store ALL transactions in EUR.
 Type 'confirm ID' to store one displayed transaction in EUR.
 Example: confirm 3
 Enter any other command to ignore.
-Error: After 'list transaction -to ...', use 'confirm all' or 'confirm ID'.
-Error: Transaction ID for confirm must be an integer.
-Transaction 2 confirmed and stored in EUR.
-ID: 1 | Date: 18/03/2026 | Desc: Transaction 1 | [USD -> USD]
-    Assets:Cash                    :      74.66 | Display: 74.66 USD
-    Equity:Capital                 :      74.66 | Display: 74.66 USD
-ID: 2 | Date: 19/03/2026 | Desc: Transaction 2 | [EUR -> USD]
-    Expenses:General               :      34.25 | Display: 37.33 USD
-    Assets:Cash                    :     -34.25 | Display: -37.33 USD
-ID: 3 | Date: 20/03/2026 | Desc: Transaction 3 | [USD -> USD]
-    Assets:Bank:Main               :     200.00 | Display: 200.00 USD
-    Income:Sales                   :     200.00 | Display: 200.00 USD
-ID: 4 | Date: 21/03/2026 | Desc: Transaction 4 | [EUR -> USD]
-    Assets:Cash                    :     300.00 | Display: 327.00 USD
-    Equity:Capital                 :     300.00 | Display: 327.00 USD
+Transaction 1 confirmed and stored in EUR.
+ID: 1 | Date: 01/01/2026 | Desc: "Office Lunch" | [EUR]
+    Expenses:Food                  :      10.27
+    Assets:Cash                    :     -10.27
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD]
+    Expenses:Food                  :      50.00
+    Assets:Cash                    :     -50.00
+ID: 3 | Date: 10/01/2026 | Desc: "Taxi to Work" | [SGD]
+    Expenses:Transport             :      20.00
+    Assets:Cash                    :     -20.00
+ID: 4 | Date: 01/02/2026 | Desc: "Morning Coffee" | [SGD]
+    Expenses:Food                  :       5.00
+    Assets:Cash                    :      -5.00
+ID: 5 | Date: 15/03/2026 | Desc: "Netflix" | [USD]
+    Expenses:Entertainment         :      15.00
+    Assets:Credit                  :     -15.00
+ID: 2 | Date: 05/01/2026 | Desc: "Steak Dinner" | [SGD -> USD]
+    Expenses:Food                  :      50.00 | Display: 37.33 USD
+    Assets:Cash                    :     -50.00 | Display: -37.33 USD
 
 The displayed values are view-only by default.
 Type 'confirm all' to store ALL transactions in USD.
@@ -193,18 +201,26 @@ Transaction 1 confirmed and stored in USD.
 Transaction 2 confirmed and stored in USD.
 Transaction 3 confirmed and stored in USD.
 Transaction 4 confirmed and stored in USD.
-All 4 transactions have been confirmed and stored in USD.
-Error: Missing transaction ID to edit.
-Error: Transaction ID must be an integer.
-Error: No fields provided to edit.
-Error: Invalid posting format. Use: -p "Account Amount"
+Transaction 5 confirmed and stored in USD.
+All 5 transactions have been confirmed and stored in USD.
 Transaction edited successfully.
-Error: Missing transaction ID to delete.
-Error: Transaction ID must be an integer.
-Transaction deleted successfully.
-Exchange rates refreshed successfully for 2026-03-31.
-Error: Unknown rates command. Use: rates refresh
-Exchange rates refreshed successfully for 2026-03-31.
+Error: Missing transaction ID or filter flags to delete.
+Error: No valid filters provided. Use -begin, -end, or -match.
+Successfully deleted 1 transaction(s) matching criteria.
+Successfully deleted 1 transaction(s) matching criteria.
+ID: 1 | Date: 01/01/2026 | Desc: "Edited Office Lunch" | [USD]
+    Expenses:Food                  :      20.00
+    Assets:Cash                    :     -20.00
+ID: 3 | Date: 10/01/2026 | Desc: "Taxi to Work" | [USD]
+    Expenses:Transport             :      14.93
+    Assets:Cash                    :     -14.93
+ID: 5 | Date: 15/03/2026 | Desc: "Netflix" | [USD]
+    Expenses:Entertainment         :      15.00
+    Assets:Credit                  :     -15.00
+Successfully deleted 2 transaction(s) matching criteria.
+ID: 5 | Date: 15/03/2026 | Desc: "Netflix" | [USD]
+    Expenses:Entertainment         :      15.00
+    Assets:Credit                  :     -15.00
 All transactions have been cleared.
-No transactions found.
+No matching transactions found.
 --- Transaction Manager Exited ---

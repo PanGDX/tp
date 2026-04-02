@@ -1,0 +1,63 @@
+@startuml
+skinparam backgroundColor #EEEBDC
+skinparam sequence {
+    ParticipantBackgroundColor #FFF
+    ActorBackgroundColor #FFF
+    LifeLineBackgroundColor #FFF
+}
+hide footbox
+skinparam maxMessageSize 150
+
+actor User
+participant "parser :Parser" as Parser
+participant "<<class>>\nTransactionsList" as TLStatic
+participant "list :TransactionsList" as TL
+
+User -> Parser : processInput("delete -begin 01/01/2026 -match Food")
+activate Parser
+
+Parser -> Parser : handleDelete("-begin 01/01/2026 -match Food")
+activate Parser
+
+Parser -> Parser : parseArguments(...)
+Parser -> Parser : Check if filters exist\n(Bulk Deletion Safety)
+
+Parser -> TL : getTransactions()
+activate TL
+TL --> Parser : allTransactions
+deactivate TL
+
+note over Parser, TLStatic : Layered filtering via static Stream utilities
+
+Parser -> TLStatic : filterTransactionsByDate(allTransactions, start, end)
+activate TLStatic
+TLStatic --> Parser : dateFilteredList
+deactivate TLStatic
+
+Parser -> TLStatic : filterTransactionsByRegex(dateFilteredList, regex)
+activate TLStatic
+TLStatic --> Parser : regexFilteredList
+deactivate TLStatic
+
+Parser -> TLStatic : filterTransactionsByAccount(regexFilteredList, acc)
+activate TLStatic
+TLStatic --> Parser : toDeleteList
+deactivate TLStatic
+
+alt toDeleteList is empty
+    Parser --> User : "No transactions found matching..."
+else toDeleteList has matches
+    loop for each Transaction t in toDeleteList
+        Parser -> TL : deleteTransaction(t.getId())
+        activate TL
+        TL -> TL : save()
+        TL -> TL : refreshBalanceSheetCsv()
+        TL --> Parser
+        deactivate TL
+    end
+    Parser --> User : "Successfully deleted N transaction(s)..."
+end
+
+deactivate Parser
+deactivate Parser
+@enduml

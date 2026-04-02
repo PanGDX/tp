@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**Ledger67** is a command-line double-entry accounting system designed to help individuals and small businesses manage their financial transactions efficiently. Built on the principles of double-entry bookkeeping, Ledger67 ensures that every financial transaction is recorded with both debit and credit entries, maintaining the fundamental accounting equation: **Assets = Liabilities + Equity**.
+**Ledger67** is a command-line double-entry accounting system designed to help individuals and small businesses manage their financial transactions efficiently. Built on the principles of double-entry bookkeeping, Ledger67 ensures that every financial transaction is recorded with both debit and credit entries, maintaining the fundamental accounting equation: **Assets = Equity - Liabilities + (Income - Expenses) **.
 
 Whether you're a student learning accounting, a small business owner, or someone who wants to better manage personal finances, Ledger67 provides a simple yet powerful way to track your financial activities with proper accounting rigor.
 
@@ -556,8 +556,8 @@ Each time the `balance` command is run:
 - A CSV file is generated at:
 ```
 data/balance-sheet.csv
-
 ```
+
 #### File Contents
 The CSV includes:
 - Account names
@@ -639,7 +639,9 @@ Transactions that do not balance will be rejected.
 | **Balance (Combined)**       | `balance -acc ACCOUNT -to TARGET_CURRENCY`                          | Filter + convert balance                |
 | **Help**                     | `help`                                                               | Show help                                |
 | **Exit**                     | `exit`                                                               | Exit program                             |
-```
+
+
+
 ## Tips for Effective Use
 
 1. **Be Consistent**: Use clear, descriptive transaction descriptions that you'll understand later.
@@ -648,6 +650,7 @@ Transactions that do not balance will be rejected.
 4. **Backup Important Data**: Since transactions are stored in memory, consider exporting or noting down important transactions.
 5. **Learn the Basics**: Understanding basic accounting principles will help you get the most out of Ledger67.
 6. **Currency Conversion**: Use the view and confirm feature efficiently to better manage multiple currencies,
+
 ---
 
 *Ledger67 - Simplifying double-entry accounting for everyone*

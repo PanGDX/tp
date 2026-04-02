@@ -1,0 +1,65 @@
+@startuml
+skinparam backgroundColor #EEEBDC
+skinparam sequence {
+    ParticipantBackgroundColor #FFF
+    ActorBackgroundColor #FFF
+    LifeLineBackgroundColor #FFF
+}
+hide footbox
+
+actor User
+participant "parser :Parser" as Parser
+participant "<<class>>\nPresetHandler" as PresetHandler
+participant "postings :List<Posting>" as PostingsList
+participant "t :Transaction" as Transaction
+participant "list :TransactionsList" as TL
+
+User -> Parser : processInput("add -date 18/03/2026 -preset DAILYEXPENSE 50.00 -c SGD")
+activate Parser
+
+Parser -> Parser : handleAdd(...)
+activate Parser
+
+Parser -> Parser : parseArguments(...)
+Parser -> Parser : getFirstElementFromMap("-preset")
+
+opt presetData is not null
+    Parser -> PresetHandler : generatePostings("DAILYEXPENSE 50.00")
+    activate PresetHandler
+    
+    PresetHandler -> PresetHandler : Split input into TYPE and AMOUNT
+    
+    create PostingsList
+    PresetHandler -> PostingsList : new ArrayList<Posting>()
+    
+    note over PresetHandler: Switch on type "DAILYEXPENSE"
+    PresetHandler -> PostingsList : add(new Posting("Expenses", 50.00))
+    PresetHandler -> PostingsList : add(new Posting("Assets:Cash", -50.00))
+    
+    PresetHandler --> Parser : postings
+    deactivate PresetHandler
+    
+    opt desc == null
+        Parser -> Parser : desc = presetName ("DAILYEXPENSE")
+    end
+end
+
+create Transaction
+Parser -> Transaction : new Transaction(date, desc, postings, currency)
+activate Transaction
+Transaction -> Transaction : isBalanced() validation
+Transaction --> Parser : t
+deactivate Transaction
+
+Parser -> TL : addTransaction(t)
+activate TL
+TL -> TL : save()
+TL -> TL : refreshBalanceSheetCsv()
+TL --> Parser
+deactivate TL
+
+Parser --> User : "Transaction added successfully via preset."
+
+deactivate Parser
+deactivate Parser
+@enduml

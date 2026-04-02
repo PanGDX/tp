@@ -117,7 +117,7 @@ The transaction flow manages the lifecycle of user financial records from user i
 
 ---
 
-### Design Decisions
+#### Design Decisions
 *   **Fail-Fast Validation in Domain Entities:** Validation logic (e.g., checking for empty descriptions, valid date formats, valid currencies) is strictly enforced directly inside the `Transaction` constructor, `TransactionType`, and `CurrencyValidator`. 
     *   *Rationale:* This ensures that a `Transaction` object can never exist in an invalid state in memory. If bad data is passed, it fails immediately before being added to the list.
 *   **Encapsulated Validation:** Validation logic for specific fields is separated into utility/wrapper classes (`TransactionType` and `CurrencyValidator`) rather than bloating the `Transaction` class itself.
@@ -128,9 +128,10 @@ The transaction flow manages the lifecycle of user financial records from user i
         * Accounts are structured using `:` to support nested categorisation 
         * Enables scalable filtering and reporting 
         * Avoids ambiguity compared to flat string-based categories
+
 ---
 
-### Alternatives Considered
+#### Alternatives Considered
 **1. Input Parsing: Regex Flag Mapping vs. Fixed Position Arguments**
 *   **Alternative:** Require users to enter data in a strict order separated by a delimiter (e.g., `add 18/03/2026 | Office supplies | 45.50 | debit | SGD`).
 *   **Pros:** Much simpler to implement using a basic `String.split("\\|")`.
@@ -143,7 +144,7 @@ The transaction flow manages the lifecycle of user financial records from user i
 *   **Cons:** UUIDs are long, clunky, and highly inconvenient for users to type in a CLI environment when running `edit` or `delete` commands.
 *   **Decision:** Auto-incrementing integers were selected to provide a user-friendly, concise CLI experience.
 
-### Class Diagrams
+#### Class Diagrams
 
 The following class diagram shows the relationships between all components:
 
@@ -153,6 +154,7 @@ The following class diagram shows the relationships between all components:
 
 Implementer: JJ
 The storage feature is responsible for persisting transaction data to local file storage and restoring it upon application startup.
+
 ---
 
 #### 1. Transaction Persistence
@@ -164,6 +166,7 @@ The `Storage` class manages reading from and writing to a local text file (`ledg
 This ensures:
 * Data durability across application runs
 * Minimal risk of data loss
+
 ---
 
 #### 2. Loading Transactions
@@ -173,6 +176,7 @@ Upon application startup, `Storage` loads all previously saved transactions into
 * Reconstructs transaction IDs and updates the auto-increment counter
 
 Invalid or malformed lines are safely ignored to prevent crashes.
+
 ---
 
 #### 3. Data Encoding and Decoding
@@ -181,6 +185,7 @@ To ensure file integrity, special characters are handled using escaping:
 * `\n` for newlines
 * `\\` for backslashes
   This prevents corruption of the file format when storing user input.
+
 ---
 
 #### 4. Integration with TransactionsList
@@ -191,6 +196,7 @@ The `TransactionsList` component interacts directly with `Storage`:
 This design ensures:
 * Separation of concerns between data management and persistence
 * Consistent synchronization between memory and disk
+
 ---
 
 #### Design Considerations
@@ -206,12 +212,15 @@ The diagram above shows:
 * `TransactionsList` triggering save operations
 * `Storage` writing transaction data to file 
 * Data being reloaded when the application starts
+
 ---
 
 ### Currency Conversion Feature
 
 Implementer: JJ
+
 The currency conversion feature extends the system by introducing dynamic currency handling, persistent exchange rate storage, and real-time rate retrieval.
+
 ---
 
 #### Integration with Architecture
@@ -226,6 +235,7 @@ These components are connected as follows:
 * `Parser` handles `convert` and `rates` commands
 * `TransactionsList` uses the converter for display-level conversions
 * `ExchangeRateStorage` ensures exchange rates persist across application runs
+
 ---
 
 #### 1. Simple Currency Conversion
@@ -233,6 +243,7 @@ The `CurrencyConverter` class provides the core conversion logic via the `conver
 * Validates currencies using `CurrencyValidator`
 * Converts via a base currency for consistency
 * Handles same-currency conversion as a no-op
+
 ---
 
 #### 2. Exchange Rate Storage
@@ -244,6 +255,7 @@ The `ExchangeRateStorage` component ensures exchange rate data is persisted loca
 This allows the application to:
 * Avoid repeated API calls
 * Maintain functionality even without internet access
+
 ---
 
 #### 3. Live Exchange Rate Integration
@@ -254,6 +266,7 @@ The `LiveExchangeRateService` fetches real-time exchange rates from an external 
 * Triggered using the `rates refresh` command
 
 A fallback mechanism in `Duke` ensures the system remains functional if live data retrieval fails.
+
 ---
 
 #### 4. Conversion of Stored Transactions
@@ -266,6 +279,7 @@ Features:
 * Converts a transaction by ID
 * Uses latest available exchange rates
 * Preserves original stored values
+
 ---
 
 #### 5. Display Currency Conversion (List View)
@@ -277,6 +291,7 @@ list -to USD
 * Uses `setDisplayCurrency()` and `setAutoConvertDisplay()`
 * Conversion is applied during output rendering
 * Does not overwrite stored transaction data
+
 ---
 
 #### Design Considerations
@@ -292,6 +307,7 @@ The diagram above illustrates how user input flows through the system:
 * `CurrencyValidator` ensures valid currencies
 * `CurrencyConverter` performs the conversion 
 * Results are displayed without modifying stored data
+
 ---
 
 
@@ -300,6 +316,7 @@ The diagram above illustrates how user input flows through the system:
 This feature extends the currency conversion system by allowing users to **persist converted values into storage**, 
 instead of keeping them as view-only.
 Previously, all conversion operations (`convert`, `convert transaction`, `list transaction -to`) were strictly **non-destructive**.
+
 ---
 
 #### Implementation Details
@@ -311,29 +328,7 @@ New internal state variables in `Parser`:
 * `pendingTargetCurrency`: stores the selected target currency
 * `pendingFromListView`: indicates whether the conversion came from list view
 
-
-
-
-#### Transaction Presets Feature
-**Implementer: [Pran]**
-
-The Preset feature simplifies the user experience by allowing common double-entry transactions to be recorded using a single keyword instead of manual entry for every account posting.
-
-**Implementation Details:**
-The `PresetHandler` class acts as a factory for `Posting` objects.
-- **Keyword Mapping**: Keywords like `DAILYEXPENSE`, `INCOME`, and `BUYINGSTOCKS` are mapped to pre-defined accounting movements.
-- **Dynamic Amounting**: While the accounts are fixed by the preset, the amount is passed as a parameter during the `add` command.
-
-**Workflow:**
-1. `Parser` detects the `-preset` flag in the `add` command.
-2. `Parser` passes the preset string (e.g., `DAILYEXPENSE 50.00`) to `PresetHandler`.
-3. `PresetHandler` returns a `List<Posting>` (e.g., `Expenses +50.00`, `Assets:Cash -50.00`).
-4. `Transaction` is instantiated using these postings and added to `TransactionsList`.
-
-**Design Considerations:**
-- **Extensibility**: New accounting workflows can be added to the `switch` statement in `PresetHandler` without modifying the core `Parser` or `Transaction` logic.
-- **Default Descriptions**: If the user omits a `-desc`, the system automatically uses the preset name as the description to ensure data integrity.
----
+![Transaction Presets Diagram](diagrams/transactionspreset.png)
 
 ##### Workflow
 ##### Case 1: `convert transaction`
@@ -384,10 +379,33 @@ The `PresetHandler` class acts as a factory for `Posting` objects.
     * Avoids modifying core model classes
 * **Reuse of Existing Logic**
     * Uses `editTransaction()` instead of creating new update methods
+
 ---
 
 #### Sequence Diagram
 ![Confirm Transaction Sequence Diagram](diagrams/ConfirmTransactionSequence.png)
+
+### Transaction Presets Feature
+**Implementer: Pran**
+
+The Preset feature simplifies the user experience by allowing common double-entry transactions to be recorded using a single keyword instead of manual entry for every account posting.
+
+#### Implementation Details:
+The `PresetHandler` class acts as a factory for `Posting` objects.
+- **Keyword Mapping**: Keywords like `DAILYEXPENSE`, `INCOME`, and `BUYINGSTOCKS` are mapped to pre-defined accounting movements.
+- **Dynamic Amounting**: While the accounts are fixed by the preset, the amount is passed as a parameter during the `add` command.
+
+#### Workflow:
+1. `Parser` detects the `-preset` flag in the `add` command.
+2. `Parser` passes the preset string (e.g., `DAILYEXPENSE 50.00`) to `PresetHandler`.
+3. `PresetHandler` returns a `List<Posting>` (e.g., `Expenses +50.00`, `Assets:Cash -50.00`).
+4. `Transaction` is instantiated using these postings and added to `TransactionsList`.
+
+#### Design Considerations:
+- **Extensibility**: New accounting workflows can be added to the `switch` statement in `PresetHandler` without modifying the core `Parser` or `Transaction` logic.
+- **Default Descriptions**: If the user omits a `-desc`, the system automatically uses the preset name as the description to ensure data integrity.
+---
+
 
 ### Documentation and User Experience Improvements
 Implementer: Chingy
@@ -478,17 +496,18 @@ Ensured documentation stays current with evolving project features.
 * **Consistent Experience**: Documentation matches actual application behavior
 
 ---
+
 ### Balance Sheet Feature
 Implementer: JJ
 
 The Balance Sheet feature allows users to generate a real-time summary of their financial position based on the accounting equation:
 
 ```
-Assets = Liabilities + Equity
-
+Assets = Equity - Liabilities + (Income - Expenses)
 ```
 
 It aggregates all transactions and computes totals across hierarchical account categories.
+
 ---
 
 #### Integration with Architecture
@@ -502,23 +521,23 @@ This feature primarily extends:
 
 New component:
 - `BalanceSheet` → handles formatting and export logic
+
 ---
 
 #### 1. Command Handling
 
 The `Parser` handles the following command formats:
 ```
-
 balance
 balance -acc ACCOUNT
 balance -to TARGET_CURRENCY
 balance -acc ACCOUNT -to TARGET_CURRENCY
-
 ````
 
 The parser:
 - extracts optional flags (`-acc`, `-to`)
 - passes parameters to `TransactionsList.printBalanceSheet(...)`
+
 ---
 
 #### 2. Balance Aggregation Logic
@@ -649,23 +668,24 @@ balanceSheet.exportToCsv("data/balance-sheet.csv");
 #### Sequence Diagram
 ![Balance Sheet Sequence Diagram](diagrams/BalanceSheetSequence.png)
 
-### [Proposed] Improved Account Validation
-Implementer: Pran
 
-#### Advanced Filtering & Bulk Operations
+
+### Advanced Filtering & Bulk Operations
 **Implementer: Pran**
 
 To manage large datasets, Ledger67 implements a layered filtering system used for both viewing (`list`) and bulk removal (`delete`).
 
-**Implementation Details:**
+#### Implementation Details:
 Filtering is implemented as a series of static utility methods in `TransactionsList` that utilize Java Streams:
 - **Date Filtering**: `filterTransactionsByDate` checks if a transaction falls within an inclusive `LocalDate` range.
 - **Regex Filtering**: `filterTransactionsByRegex` uses `java.util.regex` to perform case-insensitive matches on transaction descriptions.
 - **Layered Application**: In `Parser.handleList` and `Parser.handleDelete`, these filters are applied sequentially (e.g., Filter by Date → Filter by Regex → Filter by Account).
 
-**Bulk Deletion Safety:**
+#### Bulk Deletion Safety:
 - To prevent accidental data loss, the `delete` command requires at least one filter flag (`-begin`, `-end`, `-match`, or `-acc`) when not deleting by a specific ID.
 - The system calculates the list of matching transactions first and then iterates through the IDs to remove them from the master list.
+
+![Transaction Presets Diagram](diagrams/filteringtransactionflow.png)
 
 ### [Proposed] Transaction Presets and UI Improvements
 Implementer: Pran
@@ -680,6 +700,7 @@ This feature allows users to filter transactions based on hierarchical account s
 
 As the number of transactions grows, users need a way to quickly isolate transactions belonging to specific financial categories such as Assets, Expenses, or Income.
 Hierarchical account structures (e.g., `Assets:Bank:DBS`) make simple string matching insufficient. Hence, a structured filtering mechanism was implemented.
+
 ---
 #### Implementation
 This feature is implemented across three main components:

@@ -49,7 +49,13 @@ public class Parser {
     
     public void start() {
         this.scanner = new Scanner(System.in);
-        while (scanner.hasNextLine()) {
+        while (true) {
+            System.out.print("Enter Command: ");
+            
+            if(!scanner.hasNextLine()){
+                break;
+            }
+            
             String input = scanner.nextLine().trim();
             if (input.equalsIgnoreCase("exit")) {
                 break;

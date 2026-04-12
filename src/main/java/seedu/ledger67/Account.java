@@ -16,19 +16,25 @@ public class Account {
             throw new IllegalArgumentException("Account name cannot be empty.");
         }
 
-        List<String> normalizedHierarchy = Arrays.stream(fullName.trim().split(":"))
+        List<String> rawParts = Arrays.stream(fullName.trim().split(":"))
                 .map(String::trim)
                 .collect(Collectors.toList());
 
-        if (normalizedHierarchy.stream().anyMatch(String::isEmpty)) {
+        if (rawParts.stream().anyMatch(String::isEmpty)) {
             throw new IllegalArgumentException("Account hierarchy cannot contain empty components.");
+        }
+
+        String normalizedRoot = normalizeRoot(rawParts.get(0));
+
+        List<String> normalizedHierarchy = new java.util.ArrayList<>();
+        normalizedHierarchy.add(normalizedRoot);
+
+        for (int i = 1; i < rawParts.size(); i++) {
+            normalizedHierarchy.add(rawParts.get(i));
         }
 
         this.hierarchy = normalizedHierarchy;
         this.fullName = String.join(":", normalizedHierarchy);
-
-        // force validation early
-        getRoot();
     }
 
     public String getFullName() {
@@ -40,13 +46,7 @@ public class Account {
     }
 
     public String getRoot() {
-        String root = hierarchy.get(0).toLowerCase();
-        if (!VALID_ROOTS.contains(root)) {
-            throw new IllegalArgumentException(
-                    "Invalid account root: " + hierarchy.get(0)
-                            + ". Root must be one of Assets, Liabilities, Equity, Income, Expenses.");
-        }
-        return root;
+        return hierarchy.get(0).toLowerCase();
     }
 
     public boolean isUnder(String parentAccount) {
@@ -55,17 +55,59 @@ public class Account {
         }
 
         String normalizedParent = normalizeAccountName(parentAccount);
-        String lowerFullName = fullName.toLowerCase();
-        String lowerParent = normalizedParent.toLowerCase();
+        String normalizedSelf = normalizeAccountName(fullName);
 
-        return lowerFullName.equals(lowerParent)
-                || lowerFullName.startsWith(lowerParent + ":");
+        String lowerParent = normalizedParent.toLowerCase();
+        String lowerSelf = normalizedSelf.toLowerCase();
+
+        return lowerSelf.equals(lowerParent)
+                || lowerSelf.startsWith(lowerParent + ":");
     }
 
     private static String normalizeAccountName(String accountName) {
-        return Arrays.stream(accountName.trim().split(":"))
+        List<String> parts = Arrays.stream(accountName.trim().split(":"))
                 .map(String::trim)
-                .collect(Collectors.joining(":"));
+                .collect(Collectors.toList());
+
+        if (parts.isEmpty() || parts.stream().anyMatch(String::isEmpty)) {
+            throw new IllegalArgumentException("Account hierarchy cannot contain empty components.");
+        }
+
+        String normalizedRoot = normalizeRoot(parts.get(0));
+
+        List<String> normalizedParts = new java.util.ArrayList<>();
+        normalizedParts.add(normalizedRoot);
+
+        for (int i = 1; i < parts.size(); i++) {
+            normalizedParts.add(parts.get(i));
+        }
+
+        return String.join(":", normalizedParts);
+    }
+
+    private static String normalizeRoot(String root) {
+        String lowerRoot = root.trim().toLowerCase();
+
+        if (!VALID_ROOTS.contains(lowerRoot)) {
+            throw new IllegalArgumentException(
+                    "Invalid account root: " + root
+                            + ". Root must be one of Assets, Liabilities, Equity, Income, Expenses.");
+        }
+
+        switch (lowerRoot) {
+        case "assets":
+            return "Assets";
+        case "liabilities":
+            return "Liabilities";
+        case "equity":
+            return "Equity";
+        case "income":
+            return "Income";
+        case "expenses":
+            return "Expenses";
+        default:
+            throw new IllegalArgumentException("Invalid account root: " + root);
+        }
     }
 
     @Override

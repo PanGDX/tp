@@ -2,7 +2,6 @@ package seedu.ledger67;
 
 import org.junit.jupiter.api.Test;
 
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,5 +35,38 @@ public class AccountTest {
 
         assertFalse(acc.isUnder("Expenses"));
         assertFalse(acc.isUnder("Assets:Cash"));
+    }
+
+    @Test
+    public void testWhitespaceAroundColonIsNormalized() {
+        Account acc = new Account(" Assets : Cash ");
+
+        assertEquals("Assets:Cash", acc.getFullName());
+        assertEquals("assets", acc.getRoot());
+        assertEquals(2, acc.getHierarchy().size());
+    }
+
+    @Test
+    public void testRootCaseIsNormalizedButSubaccountCaseIsPreserved() {
+        Account acc = new Account("assets:DBS");
+
+        assertEquals("Assets:DBS", acc.getFullName());
+        assertEquals("assets", acc.getRoot());
+    }
+
+    @Test
+    public void testIsUnder_caseInsensitiveMatching() {
+        Account acc = new Account("assets:Food");
+
+        assertTrue(acc.isUnder("Assets:Food"));
+        assertTrue(acc.isUnder("ASSETS:FOOD"));
+        assertTrue(acc.isUnder("assets"));
+    }
+
+    @Test
+    public void testEmptyHierarchyComponentThrowsException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new Account("Assets::Cash");
+        });
     }
 }

@@ -128,6 +128,10 @@ add -date 18/03/2026 -desc "Office supplies" -p "Assets:Cash -45.50" -p "Expense
 - `-presets`: Presets: DAILYEXPENSE, INCOME, BUYINGSTOCKS
 - `-c`: The currency code (e.g., SGD, USD, EUR).
 
+**Notes**
+- Account roots are not case-sensitive
+- Sub-account names are case-sensitive, this is to preserve acronyms and other valid mixed-cased names. 
+
 **Example**
 ```
 add -date 18/03/2026 -preset DAILYEXPENSE 50.00 -c SGD

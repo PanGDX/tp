@@ -448,4 +448,18 @@ public class ParserTest {
         assertTrue(output.contains("[Generated Command: balance -acc Assets -to SGD]"));
         assertTrue(output.contains("===== BALANCE SHEET ====="));
     }
+
+    @Test
+    public void testListAccCommand_matchesAccountsDespiteWhitespaceAndCaseDifferences() {
+        String input = "add -date 01/01/2026 -desc Test1 -p \"Assets:Cash 100\" -p \"Expenses:Food -100\" -c SGD\n"
+                + "add -date 01/01/2026 -desc Test2 -p \"assets: Cash 200\" -p \"Expenses:Food -200\" -c SGD\n"
+                + "list -acc Assets:Cash\n"
+                + "exit";
+
+        runParserWithInput(input);
+
+        String output = outputStreamCaptor.toString();
+        assertTrue(output.contains("Test1"));
+        assertTrue(output.contains("Test2"));
+    }
 }

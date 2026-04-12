@@ -51,6 +51,7 @@ public class TransactionsList {
             save();
             refreshBalanceSheetCsv();
         } else {
+            Transaction.rollbackNextIdIfUnused(t.getId());
             throw new IllegalArgumentException("Transaction is unbalanced!");
         }
     }

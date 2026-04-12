@@ -283,6 +283,10 @@ Removes all transactions from the ledger (use with caution!).
 clear
 ```
 
+#### Note
+- IDs will increase even after clear to keep to ledger semantics.
+
+
 ### 7. Currency Conversion: `convert`
 Converts amounts between different currencies using current exchange rates.
 

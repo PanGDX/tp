@@ -41,10 +41,10 @@ public class Transaction {
     }
 
     public Transaction(String dateStr, String description, List<Posting> newPostings, String currencyStr) {
-        // Calls the Master Constructor above
-        this(nextId++, dateStr, description, newPostings, currencyStr);
+        // Only increment nextId after construction succeeds
+        this(nextId, dateStr, description, newPostings, currencyStr);
+        nextId++;
 
-        // Validation check for ID (post-increment)
         assert this.id > 0 : "Auto-incremented ID must be positive.";
     }
 
@@ -75,6 +75,12 @@ public class Transaction {
     public static void updateNextId(int nextIdValue) {
         if (nextIdValue > nextId) {
             nextId = nextIdValue;
+        }
+    }
+
+    public static void rollbackNextIdIfUnused(int failedId) {
+        if (failedId > 0 && failedId == nextId - 1) {
+            nextId = failedId;
         }
     }
 

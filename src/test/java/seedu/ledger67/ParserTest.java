@@ -462,4 +462,24 @@ public class ParserTest {
         assertTrue(output.contains("Test1"));
         assertTrue(output.contains("Test2"));
     }
+
+    @Test
+    public void testInvalidAddDoesNotSkipTransactionId() {
+        String input = "add -date 01/01/2026 -desc First -p \"Assets:Cash 100\" -p \"Expenses:Food -100\" -c SGD\n"
+                + "add -date 2026-01-01 -desc BadDate -p \"Assets:Cash 100\" -p \"Expenses:Food -100\" -c SGD\n"
+                + "add -date 02/01/2026 -desc Second -p \"Assets:Cash 200\" -p \"Expenses:Food -200\" -c SGD\n"
+                + "exit\n";
+
+        runParserWithInput(input);
+
+        assertEquals(2, list.getTransactions().size());
+
+        Transaction first = list.getTransactions().get(0);
+        Transaction second = list.getTransactions().get(1);
+
+        assertEquals("First", first.getDescription());
+        assertEquals("Second", second.getDescription());
+        assertEquals(first.getId() + 1, second.getId());
+    }
+
 }

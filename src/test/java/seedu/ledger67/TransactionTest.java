@@ -79,4 +79,20 @@ public class TransactionTest {
         Assertions.assertTrue(output.contains("60.50"));
         Assertions.assertTrue(output.contains("USD"));
     }
+
+    @Test
+    public void testFailedTransactionCreationDoesNotConsumeId() {
+        Transaction first = createTransaction("15/03/2023", "First", 50.0, "debit", "USD");
+        int firstId = first.getId();
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> {
+            createTransaction("2023-03-15", "Invalid Date", 50.0, "debit", "USD");
+        });
+
+        Transaction second = createTransaction("16/03/2023", "Second", 60.0, "debit", "USD");
+        int secondId = second.getId();
+
+        Assertions.assertEquals(firstId + 1, secondId);
+    }
+
 }

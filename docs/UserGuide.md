@@ -19,7 +19,7 @@ Ledger67 also provides balance sheet generation and export features to help user
 1. **Download the application**: Obtain the `tp.jar` file from the latest release.
 2. **Run the application**: Open a terminal and navigate to the directory containing `tp.jar`, then run:
    ```
-   java -jar tp.jar
+   java -jar ledger67.jar
    ```
 
 #### Option 2: Using Gradle (For Developers)
@@ -39,7 +39,7 @@ If you have the source code and want to build from source:
    Or to create a runnable JAR:
    ```
    ./gradlew shadowJar
-   java -jar build/libs/tp-all.jar
+   java -jar build/libs/ledger67.jar
    ```
 
 3. **Start recording transactions**: Use the commands below to add, view, edit, and manage your financial transactions.
@@ -143,7 +143,10 @@ Adds a new financial transaction to your ledger.
 
 **Example**
 ```
-add -date 18/03/2026 -desc "Office supplies" -p "Assets:Cash -45.50" -p "Expenses:OfficeSupplies 45.50" -c SGD
+add -date 18/03/2026 -desc "Office supplies" 
+-p "Assets:Cash -45.50"
+-p "Expenses:OfficeSupplies 45.50" 
+-c SGD
 ```
 
 **Format (Presets)**: `add -date DATE -preset TYPE AMOUNT -c CURRENCY`
@@ -164,6 +167,18 @@ add -date 18/03/2026 -desc "Office supplies" -p "Assets:Cash -45.50" -p "Expense
 **Example**
 ```
 add -date 18/03/2026 -preset DAILYEXPENSE 50.00 -c SGD
+```
+
+**Example Output**
+```
+Enter Command: add -date 18/03/2026 -preset DAILYEXPENSE 50.00 -c SGD
+Transaction added successfully via preset.
+======================================================================
+Enter Command: list
+ID: 4 | Date: 18/03/2026 | Desc: DAILYEXPENSE | [SGD]
+    Expenses                       :      50.00
+    Assets:Cash                    :     -50.00
+======================================================================
 ```
 
 ### 3. Listing and Filtering Transactions: `list`
@@ -266,6 +281,24 @@ edit 1 -desc "Office stationery purchase"
 edit 2 -c EUR
 ```
 
+**Example Output**
+```
+Enter Command: list
+ID: 4 | Date: 18/03/2026 | Desc: DAILYEXPENSE | [SGD]
+    Expenses                       :      50.00
+    Assets:Cash                    :     -50.00
+======================================================================
+Enter Command: edit 4 -c EUR
+Transaction edited successfully.
+======================================================================
+Enter Command: list
+ID: 4 | Date: 18/03/2026 | Desc: DAILYEXPENSE | [EUR]
+    Expenses                       :      50.00
+    Assets:Cash                    :     -50.00
+======================================================================
+```
+
+
 **Note**
 - Edited posting amounts are also stored to **2 decimal places**.
 - If more than 2 decimal places are entered, Ledger67 will round them before saving.
@@ -290,6 +323,28 @@ Removes transactions from the ledger. You can delete a single transaction by its
 *   **Delete by Keyword**: `delete -match Steak` (Removes all transactions with "Steak" in the description).
 *   **Delete by Date Range**: `delete -begin 01/01/2026 -end 15/01/2026` (Removes everything in the first half of January).
 *   **Layered Deletion**: `delete -acc Expenses:Entertainment -match Netflix` (Removes Netflix transactions specifically from that account).
+
+
+**Example Output**
+```
+Enter Command: list
+ID: 1 | Date: 18/03/2026 | Desc: Office supplies | [SGD]
+    Assets:Cash                    :     -45.50
+    Expenses:OfficeSupplies        :      45.50
+ID: 2 | Date: 18/03/2026 | Desc: Office supplies | [SGD]
+    Assets:Cash                    :     -45.50
+    Expenses:OfficeSupplies        :      45.50
+ID: 3 | Date: 18/03/2026 | Desc: Office supplies | [SGD]
+    Assets:Cash                    :     -45.50
+    Expenses:OfficeSupplies        :      45.50
+======================================================================
+Enter Command: delete -match Office
+Successfully deleted 3 transaction(s) matching criteria.
+======================================================================
+Enter Command: list
+No matching transactions found.
+```
+
 
 ### 6. Clearing All Transactions: `clear`
 Removes all transactions from the ledger (use with caution!).
